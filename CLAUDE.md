@@ -1,7 +1,7 @@
 # qkenn-site — site cá nhân song ngữ (Astro 7, static) cho https://qkenn.cloud
 
 Nội dung (bài viết, trang About, menu, footer) lấy từ Payload CMS https://cms.qkenn.cloud **lúc build**.
-CMS publish → GitHub `repository_dispatch` (event `cms-publish`) → workflow build lại site → rsync lên VPS.
+CMS publish → GitHub `workflow_dispatch` của `.github/workflows/deploy.yml` (inputs reason/slug; vẫn nhận `repository_dispatch` cms-publish) → build → tar qua SSH forced command → `deploy/receive.sh` trên VPS đổi symlink `current` (atomic). Chi tiết + setup VPS: `deploy/README.md`.
 
 ## Commands
 Chạy trong Docker `node:22-alpine` (Node host là 18):
@@ -22,4 +22,9 @@ Chạy trong Docker `node:22-alpine` (Node host là 18):
 
 ## Architecture
 - `src/lib/` dữ liệu CMS · `src/layouts/` layout · `src/components/` UI · `src/pages/` route · `src/styles/`
-- `tests/` vitest · `deploy/` script phía VPS · `.github/workflows/` CI build + deploy
+- `tests/` vitest · `deploy/` receiver phía VPS (chạy root, cài ở /usr/local/bin) + test + nginx đề xuất · `.github/workflows/` CI build + deploy
+- Sitemap: endpoint riêng `src/pages/sitemap-index.xml.ts` (không dùng @astrojs/sitemap) để khớp canonical/hreflang với trang
+- `src/lib/cms.ts` lọc URL menu/mạng xã hội (chỉ http/https/mailto/đường dẫn nội bộ)
+
+## Things Claude gets wrong
+- Test `deploy/receive.sh` CHỈ trong container hoặc SITE_ROOT dưới /tmp: khi biến SSH_CONNECTION có mặt (phiên SSH), script bỏ qua override và ghi vào /var/www/qkenn.cloud thật
