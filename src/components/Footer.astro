@@ -1,0 +1,67 @@
+---
+import type { Locale, SiteSettings } from '../lib/cms'
+import { routes } from '../i18n/routes'
+import { useTranslations } from '../i18n/ui'
+
+interface Props {
+  locale: Locale
+  settings: SiteSettings
+}
+
+const { locale, settings } = Astro.props
+const t = useTranslations(locale)
+
+const platformLabels: Record<string, string> = {
+  github: 'GitHub',
+  linkedin: 'LinkedIn',
+  facebook: 'Facebook',
+  x: 'X',
+  email: 'Email',
+}
+
+const socials = (settings.socials ?? [])
+  .filter((s) => s?.url?.trim())
+  .map((s) => {
+    const url = s.url.trim()
+    const isEmail = s.platform === 'email'
+    const href = isEmail && !/^mailto:/i.test(url) ? `mailto:${url}` : url
+    return {
+      href,
+      label: platformLabels[s.platform] ?? s.platform,
+      rel: isEmail ? undefined : 'me noopener noreferrer',
+    }
+  })
+
+const year = new Intl.DateTimeFormat('en', { year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date())
+const footerText = settings.footerText?.trim()
+---
+
+<footer class="mt-auto border-t border-line">
+  <div class="site-container flex flex-col gap-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+    <p class="whitespace-pre-line">{footerText || `© ${year} ${settings.siteName}`}</p>
+    <ul class="flex flex-wrap items-center gap-x-5 gap-y-1" aria-label={t('footer.social')}>
+      {
+        socials.map((s) => (
+          <li>
+            <a href={s.href} rel={s.rel} class="inline-block py-1 transition-colors hover:text-accent">
+              {s.label}
+            </a>
+          </li>
+        ))
+      }
+      <li>
+        <a
+          href={routes.rss(locale)}
+          type="application/rss+xml"
+          class="inline-flex items-center gap-1.5 py-1 transition-colors hover:text-accent"
+        >
+          <svg class="size-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="5" cy="19" r="2.5"></circle>
+            <path d="M2.5 9.5a12 12 0 0 1 12 12h-3a9 9 0 0 0-9-9zM2.5 2.5a19 19 0 0 1 19 19h-3a16 16 0 0 0-16-16z"></path>
+          </svg>
+          {t('footer.rss')}
+        </a>
+      </li>
+    </ul>
+  </div>
+</footer>

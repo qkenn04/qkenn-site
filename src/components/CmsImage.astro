@@ -1,0 +1,35 @@
+---
+// <img> thuần cho ảnh CMS: srcset từ các kích thước CMS, width/height để tránh CLS.
+// priority (ảnh hero, ảnh thẻ đầu danh sách): tải ngay + fetchpriority cao; còn lại lazy. Luôn giải mã async.
+import type { Media } from '../lib/cms'
+import { buildSrcset, mediaUrl, pickImage, type ImageVariant } from './media'
+
+interface Props {
+  media: Media | null | undefined
+  variant: ImageVariant
+  sizes: string
+  priority?: boolean
+  class?: string
+}
+
+const { media, variant, sizes, priority = false, class: className } = Astro.props
+const primary = pickImage(media, variant)
+const srcset = media && primary ? buildSrcset(media, primary) : undefined
+---
+
+{
+  media && primary && (
+    <img
+      src={mediaUrl(primary.url)}
+      srcset={srcset}
+      sizes={srcset ? sizes : undefined}
+      width={primary.width}
+      height={primary.height}
+      alt={media.alt ?? ''}
+      loading={priority ? 'eager' : 'lazy'}
+      fetchpriority={priority ? 'high' : undefined}
+      decoding="async"
+      class={className}
+    />
+  )
+}

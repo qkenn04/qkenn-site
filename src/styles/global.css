@@ -1,2 +1,236 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
+
+/*
+ * Dark mode theo class `.dark` trên <html> (script inline trong <head> đặt class trước khi vẽ trang).
+ * Khi trình duyệt tắt JS (<html> không có class `.js`), vẫn theo prefers-color-scheme của hệ điều hành.
+ */
+@custom-variant dark {
+  &:where(.dark, .dark *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not(.js), :root:not(.js) *) {
+      @slot;
+    }
+  }
+}
+
+/* Màu ngữ nghĩa: đổi một chỗ cho cả light/dark. Tương phản đã chọn đạt WCAG AA (chữ thường ≥ 4.5:1). */
+:root {
+  color-scheme: light;
+  --site-bg: #ffffff;
+  --site-fg: #27272a; /* zinc-800, ~15:1 trên nền trắng */
+  --site-muted: #52525b; /* zinc-600, ~7.7:1 */
+  --site-line: #e4e4e7; /* zinc-200 */
+  --site-subtle: #f4f4f5; /* zinc-100 */
+  --site-accent: #0f766e; /* teal-700, ~5.5:1 */
+  --site-accent-strong: #115e59; /* teal-800 */
+  --site-accent-soft: #f0fdfa; /* teal-50 */
+}
+
+:root.dark {
+  color-scheme: dark;
+  --site-bg: #18181b; /* zinc-900 */
+  --site-fg: #e4e4e7; /* zinc-200, ~14:1 */
+  --site-muted: #a1a1aa; /* zinc-400, ~7:1 */
+  --site-line: #3f3f46; /* zinc-700 */
+  --site-subtle: #27272a; /* zinc-800 */
+  --site-accent: #5eead4; /* teal-300, ~11:1 */
+  --site-accent-strong: #99f6e4; /* teal-200 */
+  --site-accent-soft: #134e4a; /* teal-900 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.js) {
+    color-scheme: dark;
+    --site-bg: #18181b;
+    --site-fg: #e4e4e7;
+    --site-muted: #a1a1aa;
+    --site-line: #3f3f46;
+    --site-subtle: #27272a;
+    --site-accent: #5eead4;
+    --site-accent-strong: #99f6e4;
+    --site-accent-soft: #134e4a;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--site-bg);
+  --color-fg: var(--site-fg);
+  --color-muted: var(--site-muted);
+  --color-line: var(--site-line);
+  --color-subtle: var(--site-subtle);
+  --color-accent: var(--site-accent);
+  --color-accent-strong: var(--site-accent-strong);
+  --color-accent-soft: var(--site-accent-soft);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--site-bg);
+    color: var(--site-fg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--site-accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--site-accent);
+    color: var(--site-bg);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+/*
+ * Bảng màu cho nội dung bài viết, dùng cùng `prose dark:prose-invert`.
+ * Tự khai báo đủ biến (thay cho prose-zinc) để màu link theo accent của site không bị ghi đè do thứ tự CSS.
+ */
+@utility prose-site {
+  --tw-prose-body: #3f3f46; /* zinc-700 */
+  --tw-prose-headings: #18181b;
+  --tw-prose-lead: #52525b;
+  --tw-prose-links: var(--site-accent);
+  --tw-prose-bold: #18181b;
+  --tw-prose-counters: #71717a;
+  --tw-prose-bullets: #a1a1aa;
+  --tw-prose-hr: #e4e4e7;
+  --tw-prose-quotes: #27272a;
+  --tw-prose-quote-borders: #d4d4d8;
+  --tw-prose-captions: #71717a;
+  --tw-prose-kbd: #18181b;
+  --tw-prose-kbd-shadows: rgb(24 24 27 / 10%);
+  --tw-prose-code: #18181b;
+  --tw-prose-pre-code: #e4e4e7;
+  --tw-prose-pre-bg: #27272a;
+  --tw-prose-th-borders: #d4d4d8;
+  --tw-prose-td-borders: #e4e4e7;
+
+  --tw-prose-invert-body: #d4d4d8; /* zinc-300 */
+  --tw-prose-invert-headings: #fafafa;
+  --tw-prose-invert-lead: #a1a1aa;
+  --tw-prose-invert-links: var(--site-accent);
+  --tw-prose-invert-bold: #fafafa;
+  --tw-prose-invert-counters: #a1a1aa;
+  --tw-prose-invert-bullets: #71717a;
+  --tw-prose-invert-hr: #3f3f46;
+  --tw-prose-invert-quotes: #e4e4e7;
+  --tw-prose-invert-quote-borders: #52525b;
+  --tw-prose-invert-captions: #a1a1aa;
+  --tw-prose-invert-kbd: #fafafa;
+  --tw-prose-invert-kbd-shadows: rgb(250 250 250 / 10%);
+  --tw-prose-invert-code: #fafafa;
+  --tw-prose-invert-pre-code: #d4d4d8;
+  --tw-prose-invert-pre-bg: #09090b;
+  --tw-prose-invert-th-borders: #52525b;
+  --tw-prose-invert-td-borders: #3f3f46;
+
+  & :where(a):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+  & :where(a):not(:where([class~='not-prose'], [class~='not-prose'] *)):hover {
+    text-decoration-thickness: 2px;
+  }
+
+  /*
+   * Ảnh/video chèn trong nội dung (upload của Payload, có thể bọc <picture><source>): luôn co theo khung,
+   * giữ tỉ lệ thật của file được tải — kể cả khi HTML thiếu lớp bọc .payload-richtext. Chỉ CSS, không JS.
+   */
+  & :where(img, video) {
+    max-width: 100%;
+    height: auto;
+  }
+  & :where(picture) {
+    display: block;
+    max-width: 100%;
+  }
+}
+
+/*
+ * HTML richtext xuất từ Payload (lexical → HTML), bọc trong <div class="payload-richtext">.
+ * prose chỉ bỏ lề cho con trực tiếp đầu/cuối của .prose, nên bù lại cho lớp bọc này.
+ */
+.payload-richtext > :first-child {
+  margin-top: 0;
+}
+.payload-richtext > :last-child {
+  margin-bottom: 0;
+}
+.payload-richtext :where(p, li, h1, h2, h3, h4, h5, h6, blockquote) {
+  overflow-wrap: break-word;
+}
+.payload-richtext :where(img, video) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+/* Lexical xuất trích dẫn dạng <blockquote>chữ</blockquote> (không bọc <p>) */
+.payload-richtext blockquote {
+  font-style: normal;
+}
+/* Mục danh sách chỉ chứa danh sách con (danh sách lồng nhau) — không hiện dấu đầu dòng thừa */
+.payload-richtext li.nestedListItem,
+.payload-richtext li:has(> ul:only-child),
+.payload-richtext li:has(> ol:only-child) {
+  list-style: none;
+}
+/* Checklist của lexical */
+.payload-richtext ul.list-check {
+  list-style: none;
+  padding-inline-start: 0;
+}
+.payload-richtext ul.list-check > li {
+  position: relative;
+  padding-inline-start: 1.75em;
+}
+.payload-richtext ul.list-check > li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.4em;
+  width: 1em;
+  height: 1em;
+  border: 1.5px solid currentColor;
+  border-radius: 0.25em;
+  opacity: 0.6;
+}
+.payload-richtext ul.list-check > li[aria-checked='true']::before,
+.payload-richtext ul.list-check > li.list-item-checkbox-checked::before {
+  background: var(--site-accent);
+  border-color: var(--site-accent);
+  opacity: 1;
+}
+/* Bảng/khối code rộng cuộn ngang thay vì làm vỡ bố cục trên điện thoại */
+.payload-richtext table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.payload-richtext pre {
+  overflow-x: auto;
+}
+
+/* Cột nội dung chung cho header, main, footer: 46rem gồm padding → ~43rem chữ (~70ch ở cỡ prose-lg) */
+@utility site-container {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  @media (width >= 40rem) {
+    padding-inline: 1.5rem;
+  }
+}

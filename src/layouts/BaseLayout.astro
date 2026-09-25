@@ -1,0 +1,108 @@
+---
+import '../styles/global.css'
+import type { Locale, Media, SiteSettings } from '../lib/cms'
+import Footer from '../components/Footer.astro'
+import Header from '../components/Header.astro'
+import SeoHead, { type SeoArticle } from '../components/SeoHead.astro'
+import { pickOgImage } from '../components/media'
+import type { Alternates } from '../i18n/routes'
+import { localeMeta, useTranslations } from '../i18n/ui'
+
+interface Props {
+  locale: Locale
+  settings: SiteSettings
+  /** Tiêu đề trang (không kèm tên site). Bỏ trống = trang chủ. */
+  title?: string
+  description?: string | null
+  /** path của trang này; không có → không canonical (vd 404) */
+  path?: string
+  /** Trang tương đương ở từng ngôn ngữ — dùng cho nút chuyển ngôn ngữ */
+  alternates: Alternates
+  /** hreflang; mặc định = alternates (chỉ đưa vào những bản thực sự tương đương) */
+  hreflang?: Alternates
+  /** canonical khác path (vd bài chưa dịch → bản tiếng Việt gốc) */
+  canonicalPath?: string
+  image?: Media | null
+  article?: SeoArticle
+  noindex?: boolean
+}
+
+const {
+  locale,
+  settings,
+  title,
+  description,
+  path,
+  alternates,
+  hreflang,
+  canonicalPath,
+  image,
+  article,
+  noindex = false,
+} = Astro.props
+
+const t = useTranslations(locale)
+const siteName = settings.siteName?.trim() || 'qkenn'
+const tagline = settings.tagline?.trim()
+const fullTitle = title ? `${title} | ${siteName}` : tagline ? `${siteName} – ${tagline}` : siteName
+const metaDescription = (
+  description?.trim() ||
+  settings.description?.trim() ||
+  tagline ||
+  t('site.defaultDescription')
+).replace(/\s+/g, ' ')
+const canonical = canonicalPath ?? path
+// Trang canonical ở nơi khác (bản dịch dự phòng) thì không khai báo hreflang
+const hreflangMap = canonical && canonical === path ? (hreflang ?? alternates) : {}
+---
+
+<!doctype html>
+<html lang={localeMeta[locale].htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {/* Áp dụng theme trước khi vẽ trang (không nháy màu); class `.js` = có JS → hiện nút đổi theme */}
+    <script is:inline>
+      ;(function () {
+        var root = document.documentElement
+        var stored = null
+        root.classList.add('js')
+        try {
+          stored = localStorage.getItem('theme')
+        } catch (e) {}
+        root.classList.toggle(
+          'dark',
+          stored === 'dark' || (stored !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches),
+        )
+      })()
+    </script>
+    <SeoHead
+      locale={locale}
+      siteName={siteName}
+      title={fullTitle}
+      socialTitle={title ?? siteName}
+      description={metaDescription}
+      canonicalPath={canonical}
+      hreflang={hreflangMap}
+      image={pickOgImage(image)}
+      article={article}
+      noindex={noindex}
+      rssTitle={t('rss.title', { site: siteName })}
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body class="flex min-h-dvh flex-col bg-bg text-fg antialiased">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-bg focus:px-4 focus:py-2 focus:font-medium focus:text-fg focus:shadow-lg focus:ring-2 focus:ring-accent"
+    >
+      {t('a11y.skip')}
+    </a>
+    <Header locale={locale} settings={{ ...settings, siteName }} alternates={alternates} currentPath={path} />
+    <main id="main" tabindex="-1" class="site-container flex-1 py-10 focus:outline-none sm:py-14">
+      <slot />
+    </main>
+    <Footer locale={locale} settings={{ ...settings, siteName }} />
+  </body>
+</html>

@@ -1,0 +1,30 @@
+---
+import type { Locale, Post } from '../lib/cms'
+import PostCard from './PostCard.astro'
+
+interface Props {
+  posts: Post[]
+  locale: Locale
+  /** Hiện khi danh sách rỗng */
+  emptyText: string
+  headingLevel?: 2 | 3
+  /** Ảnh của thẻ ĐẦU TIÊN tải ngay (ảnh LCP trên điện thoại); chỉ bật cho danh sách ở đầu trang */
+  priority?: boolean
+}
+
+const { posts, locale, emptyText, headingLevel = 2, priority = false } = Astro.props
+---
+
+{
+  posts.length > 0 ? (
+    <ul class="divide-y divide-line">
+      {posts.map((post, i) => (
+        <li>
+          <PostCard post={post} locale={locale} headingLevel={headingLevel} priority={priority && i === 0} />
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p class="rounded-lg border border-dashed border-line px-5 py-8 text-center text-muted">{emptyText}</p>
+  )
+}

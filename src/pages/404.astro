@@ -1,0 +1,39 @@
+---
+// Trang 404 song ngữ (một file dist/404.html dùng cho mọi URL không tồn tại, cả /en/…)
+import { getSiteSettings } from '../lib/cms'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import { routes } from '../i18n/routes'
+import { useTranslations } from '../i18n/ui'
+
+const vi = useTranslations('vi')
+const en = useTranslations('en')
+const settings = await getSiteSettings('vi')
+const linkClass = 'font-medium text-accent underline-offset-4 hover:underline'
+---
+
+<BaseLayout
+  locale="vi"
+  settings={settings}
+  title={`${vi('notFound.title')} · ${en('notFound.title')}`}
+  description={`${vi('notFound.body')} ${en('notFound.body')}`}
+  alternates={{ vi: routes.home('vi'), en: routes.home('en') }}
+  noindex
+>
+  <p class="font-mono text-sm font-semibold tracking-widest text-accent">404</p>
+  <section class="mt-3" aria-labelledby="nf-vi">
+    <h1 id="nf-vi" class="text-3xl font-bold tracking-tight sm:text-4xl">{vi('notFound.title')}</h1>
+    <p class="mt-4 text-lg text-muted">{vi('notFound.body')}</p>
+    <ul class="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+      <li><a href={routes.home('vi')} class={linkClass}>{vi('notFound.home')}</a></li>
+      <li><a href={routes.blog('vi')} class={linkClass}>{vi('notFound.blog')}</a></li>
+    </ul>
+  </section>
+  <section lang="en" class="mt-12 border-t border-line pt-10" aria-labelledby="nf-en">
+    <h2 id="nf-en" class="text-2xl font-bold tracking-tight">{en('notFound.title')}</h2>
+    <p class="mt-4 text-lg text-muted">{en('notFound.body')}</p>
+    <ul class="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+      <li><a href={routes.home('en')} class={linkClass}>{en('notFound.home')}</a></li>
+      <li><a href={routes.blog('en')} class={linkClass}>{en('notFound.blog')}</a></li>
+    </ul>
+  </section>
+</BaseLayout>

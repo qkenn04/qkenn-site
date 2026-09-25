@@ -1,0 +1,106 @@
+---
+// Thẻ SEO trong <head>: title, description, canonical, hreflang, Open Graph, Twitter card, RSS.
+import type { Locale } from '../lib/cms'
+import { defaultLocale, locales } from '../lib/cms'
+import type { Alternates } from '../i18n/routes'
+import { routes } from '../i18n/routes'
+import { localeMeta, otherLocale } from '../i18n/ui'
+
+export interface SeoImage {
+  url: string
+  width: number
+  height: number
+  alt: string
+}
+
+export interface SeoArticle {
+  publishedTime: string
+  modifiedTime?: string
+  tags?: string[]
+}
+
+interface Props {
+  locale: Locale
+  siteName: string
+  /** <title> đầy đủ */
+  title: string
+  /** og:title / twitter:title (không kèm tên site) */
+  socialTitle: string
+  description: string
+  /** path canonical; không có → không in canonical/og:url (vd trang 404) */
+  canonicalPath?: string
+  /** Các bản tương đương theo ngôn ngữ cho hreflang; rỗng → không in hreflang */
+  hreflang?: Alternates
+  image?: SeoImage | null
+  article?: SeoArticle
+  noindex?: boolean
+  rssTitle: string
+}
+
+const {
+  locale,
+  siteName,
+  title,
+  socialTitle,
+  description,
+  canonicalPath,
+  hreflang = {},
+  image,
+  article,
+  noindex = false,
+  rssTitle,
+} = Astro.props
+
+const site = Astro.site ?? Astro.url
+const absolute = (path: string) => new URL(path, site).href
+const canonical = canonicalPath ? absolute(canonicalPath) : undefined
+
+const hreflangLinks = locales
+  .filter((l) => hreflang[l])
+  .map((l) => ({ lang: localeMeta[l].htmlLang, href: absolute(hreflang[l]!) }))
+const xDefault = hreflang[defaultLocale] ? absolute(hreflang[defaultLocale]!) : undefined
+const altLocale = otherLocale(locale)
+---
+
+<title>{title}</title>
+<meta name="description" content={description} />
+{canonical && <link rel="canonical" href={canonical} />}
+{noindex && <meta name="robots" content="noindex, follow" />}
+{hreflangLinks.map((l) => <link rel="alternate" hreflang={l.lang} href={l.href} />)}
+{hreflangLinks.length > 0 && xDefault && <link rel="alternate" hreflang="x-default" href={xDefault} />}
+<link rel="alternate" type="application/rss+xml" title={rssTitle} href={absolute(routes.rss(locale))} />
+
+<meta property="og:type" content={article ? 'article' : 'website'} />
+<meta property="og:site_name" content={siteName} />
+<meta property="og:title" content={socialTitle} />
+<meta property="og:description" content={description} />
+{canonical && <meta property="og:url" content={canonical} />}
+<meta property="og:locale" content={localeMeta[locale].og} />
+{hreflang[altLocale] && <meta property="og:locale:alternate" content={localeMeta[altLocale].og} />}
+{
+  image && (
+    <>
+      <meta property="og:image" content={image.url} />
+      <meta property="og:image:width" content={String(image.width)} />
+      <meta property="og:image:height" content={String(image.height)} />
+      {image.alt && <meta property="og:image:alt" content={image.alt} />}
+    </>
+  )
+}
+{
+  article && (
+    <>
+      <meta property="article:published_time" content={article.publishedTime} />
+      {article.modifiedTime && <meta property="article:modified_time" content={article.modifiedTime} />}
+      {(article.tags ?? []).map((tag) => (
+        <meta property="article:tag" content={tag} />
+      ))}
+    </>
+  )
+}
+
+<meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+<meta name="twitter:title" content={socialTitle} />
+<meta name="twitter:description" content={description} />
+{image && <meta name="twitter:image" content={image.url} />}
+{image?.alt && <meta name="twitter:image:alt" content={image.alt} />}

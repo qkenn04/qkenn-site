@@ -1,0 +1,53 @@
+---
+import { getSiteSettings, type Category, type Locale, type Post } from '../../lib/cms'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import PostList from '../PostList.astro'
+import { routes, type Alternates } from '../../i18n/routes'
+import { countPosts, otherLocale, useTranslations } from '../../i18n/ui'
+
+interface Props {
+  locale: Locale
+  category: Category
+  posts: Post[]
+  /** Danh mục cùng slug có ở ngôn ngữ còn lại */
+  hasAlternate: boolean
+}
+
+const { locale, category, posts, hasAlternate } = Astro.props
+const t = useTranslations(locale)
+const settings = await getSiteSettings(locale)
+
+const other = otherLocale(locale)
+const path = routes.category(locale, category.slug)
+const alternates: Alternates = {
+  [locale]: path,
+  [other]: hasAlternate ? routes.category(other, category.slug) : routes.blog(other),
+}
+const name = category.title || category.slug
+---
+
+<BaseLayout
+  locale={locale}
+  settings={settings}
+  title={t('category.title', { name })}
+  description={t('category.description', { name, site: settings.siteName })}
+  path={path}
+  alternates={alternates}
+  hreflang={hasAlternate ? alternates : { [locale]: path }}
+  noindex={posts.length === 0}
+>
+  <header class="mb-6">
+    <a
+      href={routes.blog(locale)}
+      class="inline-flex items-center gap-1.5 py-1 text-sm text-muted transition-colors hover:text-accent"
+    >
+      <span aria-hidden="true">←</span>
+      {t('post.back')}
+    </a>
+    <p class="mt-4 text-sm font-medium text-muted">{t('blog.categories')}</p>
+    <h1 class="mt-1 text-3xl font-bold tracking-tight text-balance sm:text-4xl">{name}</h1>
+    {posts.length > 0 && <p class="mt-3 text-muted">{countPosts(locale, posts.length)}</p>}
+  </header>
+
+  <PostList posts={posts} locale={locale} emptyText={t('category.empty')} headingLevel={2} priority />
+</BaseLayout>

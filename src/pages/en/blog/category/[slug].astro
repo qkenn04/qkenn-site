@@ -1,0 +1,11 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro'
+import CategoryView from '../../../../components/views/CategoryView.astro'
+import { categoryPaths } from '../../../../components/views/static-paths'
+
+export const getStaticPaths = (() => categoryPaths('en')) satisfies GetStaticPaths
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>
+---
+
+<CategoryView locale="en" {...Astro.props} />

@@ -1,0 +1,11 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro'
+import PostView from '../../components/views/PostView.astro'
+import { postPaths } from '../../components/views/static-paths'
+
+export const getStaticPaths = (() => postPaths('vi')) satisfies GetStaticPaths
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>
+---
+
+<PostView locale="vi" {...Astro.props} />

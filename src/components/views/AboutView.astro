@@ -1,0 +1,58 @@
+---
+// Trang giới thiệu: nội dung từ collection `pages` (slug 'about'); CMS chưa có → trang tạm từ mô tả site.
+import { getPage, getSiteSettings, type Locale } from '../../lib/cms'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Notice from '../Notice.astro'
+import Prose from '../Prose.astro'
+import { stripSiteSuffix } from '../seo'
+import { routes } from '../../i18n/routes'
+import { otherLocale, useTranslations } from '../../i18n/ui'
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const t = useTranslations(locale)
+const [settings, page, otherPage] = await Promise.all([
+  getSiteSettings(locale),
+  getPage('about', locale),
+  getPage('about', otherLocale(locale)),
+])
+
+const html = page?.contentHtml?.trim() ? page.contentHtml : null
+const heading = page?.title?.trim() || t('about.title')
+const isFallback = !!page?.isFallback && locale !== 'vi'
+const path = routes.about(locale)
+// Bản tiếng Anh chỉ là bản dự phòng tiếng Việt → không khai báo hreflang en cho trang vi
+const hreflang = locale === 'vi' && otherPage?.isFallback ? { vi: path } : undefined
+---
+
+<BaseLayout
+  locale={locale}
+  settings={settings}
+  title={stripSiteSuffix(page?.meta?.title, settings.siteName) || heading}
+  description={page?.meta?.description}
+  path={path}
+  canonicalPath={isFallback ? routes.about('vi') : undefined}
+  alternates={{ vi: routes.about('vi'), en: routes.about('en') }}
+  hreflang={hreflang}
+  image={page?.meta?.image}
+>
+  <article>
+    <h1 class="text-3xl font-bold tracking-tight text-balance sm:text-4xl" lang={isFallback ? 'vi' : undefined}>
+      {heading}
+    </h1>
+    {isFallback && <Notice class="mt-6">{t('page.fallbackNotice')}</Notice>}
+    {
+      html ? (
+        <Prose class="mt-8" html={html} lang={isFallback ? 'vi' : undefined} />
+      ) : (
+        <div class="mt-6 space-y-4 text-lg leading-relaxed text-muted">
+          {settings.description?.trim() && <p class="text-fg">{settings.description}</p>}
+          <p>{t('about.placeholder')}</p>
+        </div>
+      )
+    }
+  </article>
+</BaseLayout>

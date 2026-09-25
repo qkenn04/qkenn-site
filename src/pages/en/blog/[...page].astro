@@ -1,0 +1,11 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro'
+import BlogListView from '../../../components/views/BlogListView.astro'
+import { blogListPaths } from '../../../components/views/static-paths'
+
+export const getStaticPaths = (({ paginate }) => blogListPaths('en', paginate)) satisfies GetStaticPaths
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>
+---
+
+<BlogListView locale="en" {...Astro.props} />

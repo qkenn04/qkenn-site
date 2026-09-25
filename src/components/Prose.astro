@@ -1,0 +1,19 @@
+---
+// Nội dung HTML từ CMS (contentHtml, đã bọc <div class="payload-richtext">) với kiểu chữ Tailwind typography.
+// Ảnh/video chèn trong bài co theo khung nhờ utility prose-site (src/styles/global.css) — chỉ CSS, không JS.
+interface Props {
+  html: string
+  /** Ngôn ngữ của nội dung khi khác ngôn ngữ trang (bài chưa dịch → 'vi') */
+  lang?: string
+  class?: string
+}
+
+const { html, lang, class: className } = Astro.props
+---
+
+<div
+  lang={lang}
+  class:list={['prose prose-site max-w-none sm:prose-lg dark:prose-invert', className]}
+>
+  <Fragment set:html={html} />
+</div>

@@ -1,0 +1,40 @@
+---
+// Ngày đăng + danh mục (link tới trang danh mục)
+import type { Category, Locale } from '../lib/cms'
+import { routes } from '../i18n/routes'
+import { formatDate, useTranslations } from '../i18n/ui'
+
+interface Props {
+  locale: Locale
+  publishedAt: string
+  categories: Category[]
+  /** Nằm trong thẻ có "stretched link" → đưa link danh mục lên trên lớp phủ */
+  raised?: boolean
+  class?: string
+}
+
+const { locale, publishedAt, categories, raised = false, class: className } = Astro.props
+const t = useTranslations(locale)
+const cats = categories.filter((c) => c?.slug && c?.title)
+const date = formatDate(publishedAt, locale)
+---
+
+<div class:list={['flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted', className]}>
+  {date && <time datetime={publishedAt}>{date}</time>}
+  {
+    cats.length > 0 && (
+      <ul class="flex flex-wrap gap-1.5" aria-label={t('post.categories')}>
+        {cats.map((c) => (
+          <li class:list={[raised && 'relative z-10']}>
+            <a
+              href={routes.category(locale, c.slug)}
+              class="inline-block rounded-full bg-subtle px-2.5 py-0.5 text-xs font-medium text-muted transition-colors hover:text-accent"
+            >
+              {c.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</div>

@@ -1,0 +1,37 @@
+---
+// Link sang TRANG TƯƠNG ĐƯƠNG ở ngôn ngữ còn lại (vd /gioi-thieu/ ↔ /en/about/); không có → trang chủ ngôn ngữ đó.
+import type { Locale } from '../lib/cms'
+import { routes, type Alternates } from '../i18n/routes'
+import { localeMeta, otherLocale } from '../i18n/ui'
+
+interface Props {
+  locale: Locale
+  alternates: Alternates
+}
+
+const { locale, alternates } = Astro.props
+const target = otherLocale(locale)
+const href = alternates[target] ?? routes.home(target)
+---
+
+<a
+  href={href}
+  hreflang={localeMeta[target].htmlLang}
+  lang={localeMeta[target].htmlLang}
+  class="inline-flex items-center gap-1.5 rounded-md py-1.5 text-muted transition-colors hover:text-accent"
+>
+  <svg
+    class="size-4"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="9.5"></circle>
+    <path d="M2.5 12h19M12 2.5c2.5 2.6 3.8 5.8 3.8 9.5s-1.3 6.9-3.8 9.5c-2.5-2.6-3.8-5.8-3.8-9.5s1.3-6.9 3.8-9.5z"></path>
+  </svg>
+  {localeMeta[target].name}
+</a>

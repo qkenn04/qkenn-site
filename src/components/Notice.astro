@@ -1,0 +1,31 @@
+---
+// Hộp thông báo nhỏ (vd bài/trang chưa có bản dịch)
+interface Props {
+  class?: string
+}
+
+const { class: className } = Astro.props
+---
+
+<p
+  role="note"
+  class:list={[
+    'flex items-start gap-2.5 rounded-lg border border-line bg-accent-soft px-4 py-3 text-sm text-fg',
+    className,
+  ]}
+>
+  <svg
+    class="mt-0.5 size-4 shrink-0 text-accent"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="9.5"></circle>
+    <path d="M12 16.5v-5M12 7.5h.01"></path>
+  </svg>
+  <span><slot /></span>
+</p>

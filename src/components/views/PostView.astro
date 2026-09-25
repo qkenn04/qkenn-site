@@ -1,0 +1,130 @@
+---
+import { getSiteSettings, type Locale, type Post } from '../../lib/cms'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import CmsImage from '../CmsImage.astro'
+import { pickImage } from '../media'
+import Notice from '../Notice.astro'
+import PostMeta from '../PostMeta.astro'
+import Prose from '../Prose.astro'
+import { stripSiteSuffix } from '../seo'
+import { routes, type Alternates } from '../../i18n/routes'
+import { otherLocale, useTranslations } from '../../i18n/ui'
+import type { PostLink } from './static-paths'
+
+interface Props {
+  locale: Locale
+  post: Post
+  older: PostLink | null
+  newer: PostLink | null
+  /** Bài cùng slug ở ngôn ngữ còn lại (null = không có) */
+  alternate: { isFallback: boolean } | null
+}
+
+const { locale, post, older, newer, alternate } = Astro.props
+const t = useTranslations(locale)
+const settings = await getSiteSettings(locale)
+
+const other = otherLocale(locale)
+const path = routes.post(locale, post.slug)
+const otherPath = alternate ? routes.post(other, post.slug) : routes.blog(other)
+const alternates: Alternates = { [locale]: path, [other]: otherPath }
+
+// Bài chưa dịch (nội dung là bản tiếng Việt): canonical về bản gốc, đánh dấu lang="vi" cho phần nội dung
+const isFallback = post.isFallback && locale !== 'vi'
+const contentLang = isFallback ? 'vi' : undefined
+const hreflang: Alternates = alternate && !alternate.isFallback ? alternates : { [locale]: path }
+
+const hasHero = !!pickImage(post.coverImage, 'hero')
+const linkLang = (link: PostLink) => (link.isFallback && locale !== 'vi' ? 'vi' : undefined)
+---
+
+<BaseLayout
+  locale={locale}
+  settings={settings}
+  title={stripSiteSuffix(post.meta?.title, settings.siteName) || post.title}
+  description={post.meta?.description?.trim() || post.excerpt}
+  path={path}
+  canonicalPath={isFallback ? routes.post('vi', post.slug) : undefined}
+  alternates={alternates}
+  hreflang={hreflang}
+  image={post.meta?.image ?? post.coverImage}
+  article={{
+    publishedTime: post.publishedAt,
+    modifiedTime: post.updatedAt,
+    tags: post.categories.map((c) => c.title).filter(Boolean),
+  }}
+>
+  <article>
+    <header>
+      <a
+        href={routes.blog(locale)}
+        class="inline-flex items-center gap-1.5 py-1 text-sm text-muted transition-colors hover:text-accent"
+      >
+        <span aria-hidden="true">←</span>
+        {t('post.back')}
+      </a>
+      <h1
+        class="mt-4 text-3xl leading-tight font-bold tracking-tight text-balance sm:text-4xl"
+        lang={contentLang}
+      >
+        {post.title}
+      </h1>
+      <PostMeta class="mt-4" locale={locale} publishedAt={post.publishedAt} categories={post.categories} />
+    </header>
+
+    {
+      hasHero && (
+        <div class="-mx-5 mt-8 sm:mx-0">
+          <CmsImage
+            media={post.coverImage}
+            variant="hero"
+            priority
+            sizes="(min-width: 46rem) 43rem, 100vw"
+            class="aspect-video w-full bg-subtle object-cover sm:rounded-xl"
+          />
+        </div>
+      )
+    }
+
+    {isFallback && <Notice class="mt-8">{t('post.fallbackNotice')}</Notice>}
+
+    <Prose class="mt-8" html={post.contentHtml} lang={contentLang} />
+  </article>
+
+  {
+    (older || newer) && (
+      <nav aria-label={t('post.navLabel')} class="mt-16 grid gap-4 border-t border-line pt-8 sm:grid-cols-2">
+        {older && (
+          <a
+            href={routes.post(locale, older.slug)}
+            rel="prev"
+            class="group rounded-lg border border-line p-4 transition-colors hover:border-accent"
+          >
+            <span class="block text-sm text-muted">
+              <span aria-hidden="true">← </span>
+              {t('post.older')}
+            </span>
+            <span class="mt-1 block font-medium text-balance group-hover:text-accent" lang={linkLang(older)}>
+              {older.title}
+            </span>
+          </a>
+        )}
+        {newer && (
+          <a
+            href={routes.post(locale, newer.slug)}
+            rel="next"
+            class="group rounded-lg border border-line p-4 text-right transition-colors hover:border-accent sm:col-start-2"
+          >
+            <span class="block text-sm text-muted">
+              {t('post.newer')}
+              <span aria-hidden="true"> →</span>
+            </span>
+            <span class="mt-1 block font-medium text-balance group-hover:text-accent" lang={linkLang(newer)}>
+              {newer.title}
+            </span>
+          </a>
+        )}
+      </nav>
+    )
+  }
+</BaseLayout>

@@ -1,0 +1,87 @@
+---
+// Nút bật/tắt dark mode. Ẩn khi không có JS (class `.js` do script inline trong <head> đặt).
+// Trạng thái ban đầu (class `.dark`) đã được script trong <head> áp dụng trước khi vẽ trang.
+import type { Locale } from '../lib/cms'
+import { useTranslations } from '../i18n/ui'
+
+interface Props {
+  locale: Locale
+}
+
+const t = useTranslations(Astro.props.locale)
+---
+
+<button
+  type="button"
+  data-theme-toggle
+  aria-pressed="false"
+  title={t('theme.toggle')}
+  class="hidden size-9 items-center justify-center rounded-md text-muted transition-colors hover:bg-subtle hover:text-fg in-[.js]:inline-flex"
+>
+  <span class="sr-only">{t('theme.toggle')}</span>
+  <svg
+    class="size-5 dark:hidden"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+  </svg>
+  <svg
+    class="hidden size-5 dark:block"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="4.5"></circle>
+    <path
+      d="M12 1.5v2M12 20.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1.5 12h2M20.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"
+    ></path>
+  </svg>
+</button>
+
+<script>
+  const STORAGE_KEY = 'theme'
+  const root = document.documentElement
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]')
+
+  const readStored = (): string | null => {
+    try {
+      return localStorage.getItem(STORAGE_KEY)
+    } catch {
+      return null
+    }
+  }
+
+  const apply = (dark: boolean) => {
+    root.classList.toggle('dark', dark)
+    buttons.forEach((button) => button.setAttribute('aria-pressed', String(dark)))
+  }
+
+  buttons.forEach((button) =>
+    button.addEventListener('click', () => {
+      const dark = !root.classList.contains('dark')
+      apply(dark)
+      try {
+        localStorage.setItem(STORAGE_KEY, dark ? 'dark' : 'light')
+      } catch {
+        // localStorage bị chặn (private mode, cookie tắt…) → chỉ đổi cho trang hiện tại
+      }
+    }),
+  )
+
+  // Chưa chọn thủ công → đi theo hệ điều hành, kể cả khi người dùng đổi lúc đang mở trang
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (event) => {
+    if (!readStored()) apply(event.matches)
+  })
+
+  apply(root.classList.contains('dark'))
+</script>
