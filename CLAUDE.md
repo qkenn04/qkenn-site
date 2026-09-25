@@ -1,7 +1,7 @@
 # qkenn-site — site cá nhân song ngữ (Astro 7, static) cho https://qkenn.cloud
 
 Nội dung (bài viết, trang About, menu, footer) lấy từ Payload CMS https://cms.qkenn.cloud **lúc build**.
-CMS publish → GitHub `workflow_dispatch` của `.github/workflows/deploy.yml` (inputs reason/slug; vẫn nhận `repository_dispatch` cms-publish) → build → tar qua SSH forced command → `deploy/receive.sh` trên VPS đổi symlink `current` (atomic). Chi tiết + setup VPS: `deploy/README.md`.
+CMS publish → GitHub `workflow_dispatch` của `.github/workflows/deploy.yml` (inputs reason/slug; vẫn nhận `repository_dispatch` cms-publish) → build → tar qua SSH forced command (host key BẮT BUỘC xác minh qua secret `SSH_KNOWN_HOSTS`) → `deploy/receive.sh` trên VPS đổi symlink `current` (atomic). Chi tiết + setup VPS: `deploy/README.md`.
 
 ## Commands
 Chạy trong Docker `node:22-alpine` (Node host là 18):
@@ -27,4 +27,5 @@ Chạy trong Docker `node:22-alpine` (Node host là 18):
 - `src/lib/cms.ts` lọc URL menu/mạng xã hội (chỉ http/https/mailto/đường dẫn nội bộ)
 
 ## Things Claude gets wrong
+- Repo PUBLIC: không ghi IP origin của VPS (tài liệu dùng `<origin-ip>`), secret, hay hostname công cụ vận hành nội bộ vào bất kỳ file nào
 - Test `deploy/receive.sh` CHỈ trong container hoặc SITE_ROOT dưới /tmp: khi biến SSH_CONNECTION có mặt (phiên SSH), script bỏ qua override và ghi vào /var/www/qkenn.cloud thật

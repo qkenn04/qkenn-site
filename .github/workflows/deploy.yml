@@ -161,6 +161,11 @@ jobs:
             echo "deployed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # Đã cấu hình deploy thì BẮT BUỘC xác minh host key: không bao giờ gửi bản build tới máy chưa xác minh.
+          if [ -z "${SSH_KNOWN_HOSTS:-}" ]; then
+            echo "::error title=Thiếu secret SSH_KNOWN_HOSTS::Đã có SSH_KEY_B64/SSH_HOST nhưng thiếu SSH_KNOWN_HOSTS — dừng, KHÔNG kết nối VPS. Giá trị = một dòng known_hosts '<giá trị SSH_HOST> ssh-ed25519 AAAA…' (host key công khai của VPS). Tạo và đặt secret theo deploy/README.md, mục 6 (Secret / variable trên GitHub), rồi chạy lại workflow."
+            exit 1
+          fi
           if ! [[ $SHA =~ ^[0-9a-f]{40}$ ]]; then echo "::error::github.sha lạ: $SHA"; exit 1; fi
 
           # "Re-run" một run CŨ sẽ deploy bản build cũ đè lên bản mới hơn → từ lần chạy thứ 2 trở đi,
@@ -186,13 +191,14 @@ jobs:
           trap 'rm -f ~/.ssh/deploy_key' EXIT
           (umask 077 && printf '%s' "$SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key)
           ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1 || { echo "::error::SSH_KEY_B64 không phải private key hợp lệ"; exit 1; }
-          if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
-            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-            hostkey=(-o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts")
-          else
-            echo "::notice::Chưa có secret SSH_KNOWN_HOSTS — không xác minh host key của VPS"
-            hostkey=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR)
+          # CHỈ tin host key trong SSH_KNOWN_HOSTS (bỏ \r nếu dán từ Windows; không dùng known_hosts hệ thống)
+          printf '%s\n' "$SSH_KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          if ! ssh-keygen -F "$SSH_HOST" -f ~/.ssh/known_hosts >/dev/null 2>&1; then
+            echo "::error title=SSH_KNOWN_HOSTS không khớp SSH_HOST::SSH_KNOWN_HOSTS không có dòng nào cho host trong SSH_HOST — mỗi dòng phải bắt đầu bằng ĐÚNG giá trị SSH_HOST rồi tới host key ('<giá trị SSH_HOST> ssh-ed25519 AAAA…'). Xem deploy/README.md, mục 6."
+            exit 1
           fi
+          hostkey=(-o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o GlobalKnownHostsFile=/dev/null)
 
           # Lệnh "deploy <sha>" chỉ là THAM SỐ cho forced command; key không chạy được lệnh nào khác.
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 \

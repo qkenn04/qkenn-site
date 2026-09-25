@@ -1,6 +1,9 @@
 # Deploy qkenn.cloud
 
-Site tĩnh Astro → build trên GitHub Actions → gửi qua SSH tới VPS (213.199.51.252) → đổi phiên bản **nguyên tử**.
+Site tĩnh Astro → build trên GitHub Actions → gửi qua SSH tới VPS (`<origin-ip>`, IP origin thật) → đổi phiên bản **nguyên tử**.
+
+> Repo này **public**: IP origin không được ghi vào bất kỳ file nào trong repo — nó chỉ nằm trong secret `SSH_HOST`
+> (và `SSH_KNOWN_HOSTS`). Trong tài liệu này `<origin-ip>` là chỗ thay bằng IP thật khi gõ lệnh trong terminal.
 
 ```
 push main ─┐
@@ -144,36 +147,56 @@ Settings → Secrets and variables → Actions:
 
 | Tên | Loại | Giá trị |
 |---|---|---|
-| `SSH_HOST` | secret | `213.199.51.252` (IP thật — không đi qua Cloudflare) |
+| `SSH_HOST` | secret | `<origin-ip>` — IP thật của VPS (không đi qua Cloudflare) |
 | `SSH_USER` | secret | `root` |
 | `SSH_KEY_B64` | secret | private key `gha_site_deploy` dạng base64 một dòng |
-| `SSH_KNOWN_HOSTS` | secret (khuyến nghị) | host key VPS → Actions xác minh đúng máy; thiếu thì bỏ qua xác minh (như repo cms) |
+| `SSH_KNOWN_HOSTS` | secret (**bắt buộc**) | host key công khai của VPS, dạng known_hosts: `<origin-ip> ssh-ed25519 AAAAC3Nz…` — đầu dòng phải **đúng** giá trị `SSH_HOST`. Actions chỉ kết nối khi host key khớp |
 | `DISCORD_WEBHOOK` | secret (tuỳ chọn) | có thể dùng chung webhook với repo cms |
 | `CMS_URL` | **variable** (tuỳ chọn) | mặc định `https://cms.qkenn.cloud` |
 
-Đặt secret từ máy có `gh` (khoá đi thẳng qua pipe, **không hiện ra màn hình, không dán vào chat**):
+Đặt secret từ máy có `gh` và **đã ssh vào VPS được** (máy này đã tin host key VPS, nên host key lấy qua kết nối
+đã xác minh). Khoá đi thẳng từ VPS vào secret, **không hiện ra màn hình, không dán vào chat**. Dán cả khối
+(chạy trong subshell — thiếu IP hay lỗi giữa chừng thì dừng, không đụng phiên terminal):
 
 ```bash
+(
+set -euo pipefail
 R=qkenn04/qkenn-site
-ssh root@213.199.51.252 'base64 -w0 /root/.ssh/gha_site_deploy' | gh secret set SSH_KEY_B64 -R $R
-gh secret set SSH_HOST -R $R --body 213.199.51.252
+IP='<origin-ip>'   # ← thay bằng IP thật; chỉ gõ trong terminal, KHÔNG lưu vào file nào của repo
+[[ $IP =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || { echo "Chưa thay <origin-ip> bằng IP thật" >&2; exit 1; }
+KEY="$(ssh root@"$IP" 'base64 -w0 /root/.ssh/gha_site_deploy')"
+KH="$(ssh root@"$IP" 'cut -d" " -f1,2 /etc/ssh/ssh_host_ed25519_key.pub' | sed "s/^/$IP /")"
+printf '%s\n' "$KH" | ssh-keygen -lf -          # in fingerprint host key để đối chiếu (key công khai, không bí mật)
+printf '%s' "$KEY" | gh secret set SSH_KEY_B64 -R $R
+gh secret set SSH_HOST -R $R --body "$IP"
 gh secret set SSH_USER -R $R --body root
-ssh root@213.199.51.252 'cut -d" " -f1,2 /etc/ssh/ssh_host_ed25519_key.pub' \
-  | sed 's/^/213.199.51.252 /' | gh secret set SSH_KNOWN_HOSTS -R $R
+printf '%s\n' "$KH" | gh secret set SSH_KNOWN_HOSTS -R $R
 gh secret list -R $R
+)
 ```
 
-Không có `gh`: chạy `ssh root@213.199.51.252 'base64 -w0 /root/.ssh/gha_site_deploy'` rồi dán thẳng
-vào ô secret trên giao diện GitHub (macOS: thêm `| pbcopy`).
+`SSH_KNOWN_HOSTS` = đúng một dòng `<origin-ip> ssh-ed25519 AAAAC3Nz…` (host key ed25519 **công khai** của VPS,
+không phải khoá bí mật). Cách khác: `ssh-keyscan -t ed25519 <origin-ip>` in ra đúng dòng đó, nhưng keyscan **không
+xác minh** gì — chỉ dùng khi fingerprint (`… | ssh-keygen -lf -`) trùng với `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub`
+chạy ngay trên VPS. VPS đổi host key (cài lại OS…) → làm lại lệnh trên để cập nhật secret.
 
-Thiếu `SSH_KEY_B64`/`SSH_HOST` → job deploy chỉ cảnh báo `::warning::` và bỏ qua (bản build vẫn ở artifact `site`).
+Không có `gh`: lấy từng giá trị rồi dán thẳng vào ô secret trên giao diện GitHub (macOS: thêm `| pbcopy`):
+- `SSH_KEY_B64`: `ssh root@<origin-ip> 'base64 -w0 /root/.ssh/gha_site_deploy'`
+- `SSH_KNOWN_HOSTS`: `ssh root@<origin-ip> 'cut -d" " -f1,2 /etc/ssh/ssh_host_ed25519_key.pub' | sed 's/^/<origin-ip> /'`
+
+Job deploy xử lý secret thế nào:
+- Thiếu `SSH_KEY_B64`/`SSH_HOST` → chỉ cảnh báo `::warning::` và bỏ qua (bản build vẫn ở artifact `site`).
+- Có hai secret đó mà thiếu `SSH_KNOWN_HOSTS`, hoặc không có dòng nào cho đúng `SSH_HOST` → **fail** (`::error::`)
+  trước khi kết nối VPS.
+- ssh chạy với `StrictHostKeyChecking=yes`, chỉ tin known_hosts lấy từ secret (bỏ qua known_hosts hệ thống của
+  runner) → host key không khớp (VPS đổi key, bị giả mạo) → `Host key verification failed`, không gửi gì.
 
 ### 7. Chạy thử
 
 ```bash
 gh workflow run deploy.yml -R qkenn04/qkenn-site --ref main
 gh run watch -R qkenn04/qkenn-site
-ssh root@213.199.51.252 /usr/local/bin/qkenn-site-receive list
+ssh root@<origin-ip> /usr/local/bin/qkenn-site-receive list
 curl -sI https://qkenn.cloud/gioi-thieu | grep -iE '^(HTTP|location)'   # 301, Location: /gioi-thieu/
 ```
 
@@ -223,7 +246,7 @@ mới nhất), chỉ bản mới nhất được deploy.
 ## Rollback
 
 ```bash
-V=root@213.199.51.252; RX=/usr/local/bin/qkenn-site-receive
+V=root@<origin-ip>; RX=/usr/local/bin/qkenn-site-receive   # <origin-ip> = giá trị secret SSH_HOST
 ssh $V $RX list                                # release mới nhất ở trên; đánh dấu current / previous
 ssh $V $RX rollback previous                   # về bản ngay trước (chạy lần nữa = quay lại)
 ssh $V $RX rollback 20260925T101500Z-<sha40>   # về đúng một release
@@ -283,7 +306,9 @@ bash deploy/test-receive.sh && install -o root -g root -m 0755 deploy/receive.sh
 | `current tồn tại nhưng không phải symlink` | Chưa làm bước 2 |
 | `đang có deploy/rollback khác chạy` | Chờ; kiểm tra tiến trình treo: `fuser -v /var/www/qkenn.cloud/.deploy.lock` |
 | `Permission denied (publickey)` | Sai dòng authorized_keys (bước 5) hoặc sai `SSH_KEY_B64` |
-| `Host key verification failed` | VPS đổi host key → cập nhật `SSH_KNOWN_HOSTS` |
+| `::error` Thiếu secret SSH_KNOWN_HOSTS | Đã có `SSH_KEY_B64`/`SSH_HOST` nhưng chưa có `SSH_KNOWN_HOSTS` → đặt theo bước 6 rồi chạy lại |
+| `::error` SSH_KNOWN_HOSTS không khớp SSH_HOST | Dòng known_hosts phải bắt đầu bằng **đúng** giá trị `SSH_HOST` (cùng IP) → tạo lại theo bước 6 |
+| `Host key verification failed` | Host key VPS khác `SSH_KNOWN_HOSTS`. Chỉ cập nhật secret (bước 6) khi **chắc chắn** VPS vừa đổi host key (cài lại OS…); không rõ lý do → coi như có thể bị giả mạo, kiểm tra trước |
 | Build fail `Thiếu dist/…` hoặc lỗi CMS | CMS không phản hồi / dữ liệu lỗi → không deploy, site giữ nguyên bản cũ |
 | Deploy xong nhưng trang cũ | Có rule Cloudflare "Cache Everything" cho HTML? Bỏ rule hoặc purge cache |
 | `Re-run của run #N nhưng run #M (mới hơn) đã thành công — BỎ QUA deploy` | Cố ý (xem Rollback). Deploy lại bằng `gh workflow run deploy.yml …` |
