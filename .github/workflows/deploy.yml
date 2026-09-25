@@ -1,0 +1,251 @@
+name: Build + Deploy
+
+# Kích hoạt:
+#  - push lên main (sửa code site)
+#  - CMS publish/unpublish/xoá bài, lưu site-settings → workflow_dispatch với inputs {reason, slug}
+#    (PAT của CMS chỉ cần quyền Actions: write — không push được code)
+#  - repository_dispatch `cms-publish` (client_payload {site, slug, reason}) — giữ để tương thích ngược
+#  - chạy tay (workflow_dispatch, để trống inputs); nhánh khác main chỉ build, KHÔNG deploy
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - 'CLAUDE.md'
+      - 'deploy/README.md'
+      - 'deploy/nginx-*.conf'
+      - '.vscode/**'
+  workflow_dispatch:
+    # CMS gửi đúng 2 input này (gửi thêm key lạ → GitHub trả 422)
+    inputs:
+      reason:
+        description: 'CMS: publish | unpublish | delete | settings (chạy tay: để trống)'
+        type: string
+        required: false
+        default: ''
+      slug:
+        description: 'CMS: slug nội dung vừa đổi (chạy tay: để trống)'
+        type: string
+        required: false
+        default: ''
+  repository_dispatch:
+    types: [cms-publish]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash # = bash -eo pipefail
+
+jobs:
+  # 1. Test + build + đóng gói. Hỏng ở đây → VPS không bị đụng.
+  build:
+    name: Test + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Build mới HUỶ build cũ đang chạy: CMS publish dồn dập → chỉ bản build mới nhất đi tiếp
+    # (mọi build đều lấy main + nội dung CMS mới nhất nên bản mới bao trùm bản cũ).
+    # An toàn vì build không đụng VPS. Deploy có nhóm riêng bên dưới, KHÔNG bị huỷ giữa chừng.
+    concurrency:
+      group: site-build-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Nguồn kích hoạt
+        # Payload/inputs do bên gọi đặt → CHỈ đọc qua env, không nhúng ${{ }} vào script (chống script injection)
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          P_SITE: ${{ github.event.client_payload.site }}
+          P_SLUG: ${{ github.event.client_payload.slug }}
+          P_REASON: ${{ github.event.client_payload.reason }}
+          I_SLUG: ${{ inputs.slug }}
+          I_REASON: ${{ inputs.reason }}
+        run: |
+          # Bỏ ký tự điều khiển (xuống dòng → không chèn được lệnh ::…:: của runner) và dấu `, tối đa 100 byte
+          clean() { printf '%s' "${1:-?}" | tr -d '\000-\037\140' | head -c 100; }
+          {
+            echo "### qkenn-site"
+            echo "- Sự kiện: \`$EVENT\` · nhánh \`$REF\` · commit \`${SHA:0:12}\`"
+            if [ "$EVENT" = repository_dispatch ]; then
+              echo "- CMS (repository_dispatch): $(clean "$P_REASON") \`$(clean "$P_SLUG")\` (site: $(clean "$P_SITE"))"
+            elif [ "$EVENT" = workflow_dispatch ] && [ -n "$I_REASON$I_SLUG" ]; then
+              echo "- CMS (workflow_dispatch): $(clean "$I_REASON") \`$(clean "$I_SLUG")\`"
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Cài dependency
+        run: |
+          corepack enable pnpm
+          pnpm i --frozen-lockfile
+
+      - name: Unit test
+        run: pnpm test
+
+      - name: Test script nhận deploy phía VPS (deploy/receive.sh)
+        run: bash deploy/test-receive.sh
+
+      - name: Build (đọc nội dung từ CMS — CMS lỗi thì build FAIL, không deploy site rỗng)
+        env:
+          CMS_URL: ${{ vars.CMS_URL || 'https://cms.qkenn.cloud' }}
+        run: pnpm build
+
+      - name: Kiểm tra dist + đóng gói
+        run: |
+          for f in index.html en/index.html 404.html; do
+            if [ ! -s "dist/$f" ]; then echo "::error::Thiếu dist/$f — dừng, không deploy"; exit 1; fi
+          done
+          # Đóng gói ngay tại đây: deploy gửi đúng từng byte đã kiểm tra (giữ cả file ẩn nếu có)
+          tar -C dist --owner=0 --group=0 --numeric-owner -czf site.tar.gz .
+          echo "- dist: $(find dist -name '*.html' | wc -l) trang HTML, $(du -sh dist | cut -f1) → site.tar.gz $(du -h site.tar.gz | cut -f1)" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: site
+          path: site.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0 # đã gzip
+          overwrite: true # cho phép "Re-run jobs"
+
+  # 2. Stream tar.gz qua SSH tới forced command qkenn-site-receive → release mới, đổi symlink nguyên tử.
+  deploy:
+    name: Deploy lên VPS
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # actions: read — hỏi API xem đã có run thành công mới hơn chưa (chặn re-run run cũ, xem bước ssh)
+    permissions:
+      actions: read
+    # KHÔNG huỷ deploy đang chạy: chỉ mất vài giây, và để nó xong giúp thứ tự deploy luôn đúng
+    # (bản chờ sau bị thay bằng bản mới hơn). Phía VPS vẫn nguyên tử nếu kết nối có đứt.
+    concurrency:
+      group: site-deploy
+      cancel-in-progress: false
+    outputs:
+      deployed: ${{ steps.ssh.outputs.deployed }}
+      result: ${{ steps.ssh.outputs.result }}
+      release: ${{ steps.ssh.outputs.release }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: site
+
+      - name: Gửi bản build tới VPS
+        id: ssh
+        env:
+          SSH_KEY_B64: ${{ secrets.SSH_KEY_B64 }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          if [ -z "${SSH_KEY_B64:-}" ] || [ -z "${SSH_HOST:-}" ]; then
+            echo "::warning::Chưa cấu hình secret SSH_KEY_B64/SSH_HOST — bỏ qua deploy (bản build vẫn ở artifact 'site')"
+            echo "deployed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! [[ $SHA =~ ^[0-9a-f]{40}$ ]]; then echo "::error::github.sha lạ: $SHA"; exit 1; fi
+
+          # "Re-run" một run CŨ sẽ deploy bản build cũ đè lên bản mới hơn → từ lần chạy thứ 2 trở đi,
+          # nếu đã có run THÀNH CÔNG mới hơn của workflow này trên main thì bỏ qua.
+          # Deploy lại bản mới nhất: workflow_dispatch; quay về bản cũ: rollback (deploy/README.md).
+          if [ "$RUN_ATTEMPT" -gt 1 ]; then
+            wf="${WORKFLOW_REF%%@*}"; wf="${wf##*/}"
+            latest="$(gh api "repos/$REPO/actions/workflows/$wf/runs?branch=main&status=success&per_page=20" \
+              --jq '[.workflow_runs[].run_number] | max // 0')" || latest=""
+            if ! [[ $latest =~ ^[0-9]+$ ]]; then
+              echo "::error::Không hỏi được GitHub API run mới nhất — dừng để không deploy nhầm bản cũ (deploy lại bằng workflow_dispatch)"
+              exit 1
+            fi
+            if [ "$latest" -gt "$RUN_NUMBER" ]; then
+              echo "::warning::Re-run của run #$RUN_NUMBER nhưng run #$latest (mới hơn) đã thành công — BỎ QUA deploy để không đè bản cũ lên bản mới. Deploy lại bản mới nhất: workflow_dispatch; quay về bản cũ: rollback."
+              { echo "deployed=false"; echo "result=stale"; } >> "$GITHUB_OUTPUT"
+              echo "- VPS: **bỏ qua** — re-run run cũ #$RUN_NUMBER, đã có run #$latest mới hơn" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+          fi
+
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          trap 'rm -f ~/.ssh/deploy_key' EXIT
+          (umask 077 && printf '%s' "$SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key)
+          ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1 || { echo "::error::SSH_KEY_B64 không phải private key hợp lệ"; exit 1; }
+          if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            hostkey=(-o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts")
+          else
+            echo "::notice::Chưa có secret SSH_KNOWN_HOSTS — không xác minh host key của VPS"
+            hostkey=(-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR)
+          fi
+
+          # Lệnh "deploy <sha>" chỉ là THAM SỐ cho forced command; key không chạy được lệnh nào khác.
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=20 \
+              -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "${hostkey[@]}" \
+              "${SSH_USER:-root}@$SSH_HOST" "deploy $SHA" < site.tar.gz | tee deploy.log
+
+          result="$(sed -n 's/^RESULT=\([a-z-]*\) RELEASE=.*$/\1/p' deploy.log | tail -n 1)"
+          release="$(sed -n 's/^RESULT=[a-z-]* RELEASE=\([A-Za-z0-9-]*\)$/\1/p' deploy.log | tail -n 1)"
+          { echo "deployed=true"; echo "result=$result"; echo "release=$release"; } >> "$GITHUB_OUTPUT"
+          echo "- VPS: **${result:-?}** → \`${release:-?}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  # 3. Báo Discord (bỏ qua run bị huỷ vì đã có run mới hơn)
+  notify:
+    name: Báo kết quả về Discord
+    needs: [build, deploy]
+    if: always() && needs.build.result != 'cancelled' && needs.deploy.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Gửi thẻ Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          BUILD_RESULT: ${{ needs.build.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          DEPLOYED: ${{ needs.deploy.outputs.deployed }}
+          RESULT: ${{ needs.deploy.outputs.result }}
+          RELEASE: ${{ needs.deploy.outputs.release }}
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref_name }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          P_SLUG: ${{ github.event.client_payload.slug }}
+          P_REASON: ${{ github.event.client_payload.reason }}
+          I_SLUG: ${{ inputs.slug }}
+          I_REASON: ${{ inputs.reason }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "${WEBHOOK:-}" ]; then echo "⏭  Chưa có DISCORD_WEBHOOK → bỏ qua"; exit 0; fi
+          case "$EVENT" in
+            repository_dispatch) MSG="CMS ${P_REASON:-publish}: ${P_SLUG:-?}" ;;
+            workflow_dispatch) if [ -n "$I_REASON$I_SLUG" ]; then MSG="CMS ${I_REASON:-?}: ${I_SLUG:-?}"; else MSG="Chạy thủ công (nhánh $REF)"; fi ;;
+            push) MSG="${COMMIT_MSG%%$'\n'*}" ;;
+            *) MSG="Chạy thủ công (nhánh $REF)" ;;
+          esac
+          OK=3066993; BAD=15158332; WARN=15105570
+          if [ "$BUILD_RESULT" != success ]; then TITLE="❌ Site build THẤT BẠI — site đang chạy không bị đụng"; COLOR=$BAD
+          elif [ "$DEPLOY_RESULT" = skipped ]; then TITLE="ℹ️ Build nhánh $REF OK — chỉ main mới deploy"; COLOR=$WARN
+          elif [ "$DEPLOY_RESULT" != success ]; then TITLE="❌ Site deploy THẤT BẠI — xem log run"; COLOR=$BAD
+          elif [ "$RESULT" = stale ]; then TITLE="⏭️ Re-run run cũ — bỏ qua deploy (đã có bản mới hơn)"; COLOR=$WARN
+          elif [ "$DEPLOYED" != true ]; then TITLE="⚠️ Build OK nhưng CHƯA deploy — thiếu secret SSH"; COLOR=$WARN
+          elif [ "$RESULT" = unchanged ]; then TITLE="✅ qkenn.cloud: nội dung không đổi"; COLOR=$OK
+          else TITLE="✅ qkenn.cloud đã cập nhật"; COLOR=$OK; fi
+          jq -n --arg t "$TITLE" --arg u "$RUN_URL" --arg m "$MSG" --arg s "${SHA:0:7}" --arg r "${RELEASE:--}" --argjson c "$COLOR" \
+            '{embeds:[{title:$t,url:$u,color:$c,description:$m,fields:[{name:"Commit",value:$s,inline:true},{name:"Release",value:$r,inline:true}],footer:{text:"qkenn.cloud"},timestamp:(now|todate)}]}' \
+            > "$RUNNER_TEMP/discord.json"
+          curl -sS --fail-with-body -X POST -H "Content-Type: application/json" -d @"$RUNNER_TEMP/discord.json" "$WEBHOOK"
