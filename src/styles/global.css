@@ -223,6 +223,15 @@
 .payload-richtext pre {
   overflow-x: auto;
 }
+/* CMS bọc bảng trong .table-wrap: lớp bọc cuộn ngang, bảng giữ layout bảng thật */
+.payload-richtext .table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.payload-richtext .table-wrap > table {
+  display: table;
+  margin-block: 0;
+}
 
 /* Cột nội dung chung cho header, main, footer: 46rem gồm padding → ~43rem chữ (~70ch ở cỡ prose-lg) */
 @utility site-container {
