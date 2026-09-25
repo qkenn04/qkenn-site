@@ -1,0 +1,354 @@
+{
+  "docs": [
+    {
+      "id": 2,
+      "title": "Bài test: CMS đã chạy trên production",
+      "slug": "bai-test-cms-production",
+      "excerpt": "Bài viết thử để kiểm tra output của Payload CMS: tiêu đề, định dạng chữ, danh sách, trích dẫn và ảnh bìa.",
+      "content": {
+        "root": {
+          "type": "root",
+          "format": "",
+          "indent": 0,
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "Đây là bài viết ",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": "thử nghiệm",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 1,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": " đầu tiên trên CMS production tại ",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                },
+                {
+                  "type": "link",
+                  "fields": {
+                    "url": "https://cms.qkenn.cloud",
+                    "newTab": true,
+                    "linkType": "custom"
+                  },
+                  "format": "",
+                  "indent": 0,
+                  "version": 3,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "cms.qkenn.cloud",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr"
+                },
+                {
+                  "mode": "normal",
+                  "text": ".",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr",
+              "textStyle": "",
+              "textFormat": 0
+            },
+            {
+              "tag": "h2",
+              "type": "heading",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "Hệ thống gồm những gì",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr"
+            },
+            {
+              "tag": "ul",
+              "type": "list",
+              "start": 1,
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "type": "listitem",
+                  "value": 1,
+                  "format": "",
+                  "indent": 0,
+                  "version": 1,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "Payload CMS 3.90 chạy trong Docker trên VPS",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr"
+                },
+                {
+                  "type": "listitem",
+                  "value": 2,
+                  "format": "",
+                  "indent": 0,
+                  "version": 1,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "Postgres 16 lưu nội dung, ảnh lưu trên Cloudflare R2",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr"
+                },
+                {
+                  "type": "listitem",
+                  "value": 3,
+                  "format": "",
+                  "indent": 0,
+                  "version": 1,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "Site blog là Astro tĩnh, tự build lại khi có bài mới",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr"
+                }
+              ],
+              "listType": "bullet",
+              "direction": "ltr"
+            },
+            {
+              "tag": "h3",
+              "type": "heading",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "Luồng đăng bài",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr"
+            },
+            {
+              "type": "paragraph",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "Viết bài → ",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": "Publish",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 1,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": " → GitHub Actions build lại site → bài xuất hiện sau khoảng ",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": "1–2 phút",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 2,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": ".",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr",
+              "textStyle": "",
+              "textFormat": 0
+            },
+            {
+              "type": "quote",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "Người đọc chỉ tải file HTML tĩnh, nên CMS có tạm dừng thì blog vẫn chạy.",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr"
+            }
+          ],
+          "direction": "ltr"
+        }
+      },
+      "coverImage": {
+        "id": 1,
+        "alt": "Ảnh bìa bài test: chữ qkenn CMS trên nền xanh",
+        "caption": null,
+        "prefix": "qkenn",
+        "_objectKey": null,
+        "updatedAt": "2026-09-25T06:30:45.527Z",
+        "createdAt": "2026-09-25T06:29:36.732Z",
+        "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1.webp?prefix=qkenn",
+        "thumbnailURL": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-400x300.webp",
+        "filename": "bai-test-cover-1.webp",
+        "mimeType": "image/webp",
+        "filesize": 18852,
+        "width": 1600,
+        "height": 900,
+        "focalX": 50,
+        "focalY": 50,
+        "sizes": {
+          "thumbnail": {
+            "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-400x300.webp?prefix=qkenn",
+            "width": 400,
+            "height": 300,
+            "mimeType": "image/webp",
+            "filesize": 4188,
+            "filename": "bai-test-cover-1-400x300.webp"
+          },
+          "card": {
+            "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-800x450.webp?prefix=qkenn",
+            "width": 800,
+            "height": 450,
+            "mimeType": "image/webp",
+            "filesize": 8372,
+            "filename": "bai-test-cover-1-800x450.webp"
+          },
+          "hero": {
+            "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-1600x900.webp?prefix=qkenn",
+            "width": 1600,
+            "height": 900,
+            "mimeType": "image/webp",
+            "filesize": 18852,
+            "filename": "bai-test-cover-1-1600x900.webp"
+          },
+          "og": {
+            "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-1200x630.webp?prefix=qkenn",
+            "width": 1200,
+            "height": 630,
+            "mimeType": "image/webp",
+            "filesize": 12954,
+            "filename": "bai-test-cover-1-1200x630.webp"
+          }
+        }
+      },
+      "categories": [
+        {
+          "id": 1,
+          "title": "Kỹ thuật",
+          "slug": "ky-thuat",
+          "updatedAt": "2026-09-25T06:29:37.868Z",
+          "createdAt": "2026-09-25T06:29:37.855Z"
+        }
+      ],
+      "author": 1,
+      "publishedAt": "2026-09-25T06:29:37.884Z",
+      "site": "qkenn",
+      "meta": {
+        "title": null,
+        "description": null,
+        "image": null
+      },
+      "updatedAt": "2026-09-25T06:29:37.983Z",
+      "createdAt": "2026-09-25T06:29:37.892Z",
+      "_status": "published",
+      "contentHtml": "<div class=\"payload-richtext\"><p>Đây là bài viết <strong>thử nghiệm</strong> đầu tiên trên CMS production tại <a href=\"https://cms.qkenn.cloud\" rel=\"noopener noreferrer\" target=\"_blank\">cms.qkenn.cloud</a>.</p><h2>Hệ thống gồm những gì</h2><ul class=\"list-bullet\"><li\n          class=\"\"\n          style=\"\"\n          value=\"1\"\n        >Payload CMS 3.90 chạy trong Docker trên VPS</li><li\n          class=\"\"\n          style=\"\"\n          value=\"2\"\n        >Postgres 16 lưu nội dung, ảnh lưu trên Cloudflare R2</li><li\n          class=\"\"\n          style=\"\"\n          value=\"3\"\n        >Site blog là Astro tĩnh, tự build lại khi có bài mới</li></ul><h3>Luồng đăng bài</h3><p>Viết bài → <strong>Publish</strong> → GitHub Actions build lại site → bài xuất hiện sau khoảng <em>1–2 phút</em>.</p><blockquote>Người đọc chỉ tải file HTML tĩnh, nên CMS có tạm dừng thì blog vẫn chạy.</blockquote></div>"
+    }
+  ],
+  "hasNextPage": false,
+  "hasPrevPage": false,
+  "limit": 100,
+  "nextPage": null,
+  "page": 1,
+  "pagingCounter": 1,
+  "prevPage": null,
+  "totalDocs": 1,
+  "totalPages": 1
+}

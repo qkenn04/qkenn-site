@@ -1,0 +1,93 @@
+{
+  "docs": [
+    {
+      "id": 2,
+      "slug": "dung-cms-voi-payload",
+      "coverImage": null,
+      "categories": [
+        {
+          "id": 1,
+          "title": "Engineering",
+          "slug": "ky-thuat",
+          "updatedAt": "2026-09-25T03:27:15.419Z",
+          "createdAt": "2026-09-25T03:27:15.356Z"
+        }
+      ],
+      "author": null,
+      "publishedAt": "2026-09-25T03:27:15.717Z",
+      "site": "qkenn",
+      "meta": {},
+      "updatedAt": "2026-09-25T03:27:15.718Z",
+      "createdAt": "2026-09-25T03:27:15.718Z",
+      "_status": "published",
+      "contentHtml": ""
+    },
+    {
+      "id": 1,
+      "title": "Hello",
+      "slug": "xin-chao",
+      "excerpt": "The first post on the blog.",
+      "content": {
+        "root": {
+          "type": "root",
+          "format": "",
+          "indent": 0,
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "This is a sample English post.",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr",
+              "textFormat": 0
+            }
+          ],
+          "direction": "ltr"
+        }
+      },
+      "coverImage": null,
+      "categories": [
+        {
+          "id": 2,
+          "title": "Notes",
+          "slug": "ghi-chep",
+          "updatedAt": "2026-09-25T03:27:15.540Z",
+          "createdAt": "2026-09-25T03:27:15.462Z"
+        }
+      ],
+      "author": null,
+      "publishedAt": "2026-09-25T03:27:15.581Z",
+      "site": "qkenn",
+      "meta": {
+        "title": null,
+        "description": null,
+        "image": null
+      },
+      "updatedAt": "2026-09-25T04:10:59.554Z",
+      "createdAt": "2026-09-25T03:27:15.585Z",
+      "_status": "published",
+      "contentHtml": "<div class=\"payload-richtext\"><p>This is a sample English post.</p></div>"
+    }
+  ],
+  "hasNextPage": false,
+  "hasPrevPage": false,
+  "limit": 100,
+  "nextPage": null,
+  "page": 1,
+  "pagingCounter": 1,
+  "prevPage": null,
+  "totalDocs": 2,
+  "totalPages": 1
+}

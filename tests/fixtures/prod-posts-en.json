@@ -1,0 +1,354 @@
+{
+  "docs": [
+    {
+      "id": 2,
+      "title": "Test post: the CMS is live in production",
+      "slug": "bai-test-cms-production",
+      "excerpt": "A test post to check Payload CMS output: headings, text formatting, lists, a quote and a cover image.",
+      "content": {
+        "root": {
+          "type": "root",
+          "format": "",
+          "indent": 0,
+          "version": 1,
+          "children": [
+            {
+              "type": "paragraph",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "This is the first ",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": "test",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 1,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": " post on the production CMS at ",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                },
+                {
+                  "type": "link",
+                  "fields": {
+                    "url": "https://cms.qkenn.cloud",
+                    "newTab": true,
+                    "linkType": "custom"
+                  },
+                  "format": "",
+                  "indent": 0,
+                  "version": 3,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "cms.qkenn.cloud",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr"
+                },
+                {
+                  "mode": "normal",
+                  "text": ".",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr",
+              "textStyle": "",
+              "textFormat": 0
+            },
+            {
+              "tag": "h2",
+              "type": "heading",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "What's in the stack",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr"
+            },
+            {
+              "tag": "ul",
+              "type": "list",
+              "start": 1,
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "type": "listitem",
+                  "value": 1,
+                  "format": "",
+                  "indent": 0,
+                  "version": 1,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "Payload CMS 3.90 running in Docker on the VPS",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr"
+                },
+                {
+                  "type": "listitem",
+                  "value": 2,
+                  "format": "",
+                  "indent": 0,
+                  "version": 1,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "Postgres 16 for content, images on Cloudflare R2",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr"
+                },
+                {
+                  "type": "listitem",
+                  "value": 3,
+                  "format": "",
+                  "indent": 0,
+                  "version": 1,
+                  "children": [
+                    {
+                      "mode": "normal",
+                      "text": "The blog is a static Astro site, rebuilt on every publish",
+                      "type": "text",
+                      "style": "",
+                      "detail": 0,
+                      "format": 0,
+                      "version": 1
+                    }
+                  ],
+                  "direction": "ltr"
+                }
+              ],
+              "listType": "bullet",
+              "direction": "ltr"
+            },
+            {
+              "tag": "h3",
+              "type": "heading",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "Publishing flow",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr"
+            },
+            {
+              "type": "paragraph",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "Write → ",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": "Publish",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 1,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": " → GitHub Actions rebuilds the site → the post is live in about ",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": "1–2 minutes",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 2,
+                  "version": 1
+                },
+                {
+                  "mode": "normal",
+                  "text": ".",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr",
+              "textStyle": "",
+              "textFormat": 0
+            },
+            {
+              "type": "quote",
+              "format": "",
+              "indent": 0,
+              "version": 1,
+              "children": [
+                {
+                  "mode": "normal",
+                  "text": "Readers only download static HTML, so the blog stays up even if the CMS is down.",
+                  "type": "text",
+                  "style": "",
+                  "detail": 0,
+                  "format": 0,
+                  "version": 1
+                }
+              ],
+              "direction": "ltr"
+            }
+          ],
+          "direction": "ltr"
+        }
+      },
+      "coverImage": {
+        "id": 1,
+        "alt": "Test post cover: \"qkenn CMS\" on a blue background",
+        "caption": null,
+        "prefix": "qkenn",
+        "_objectKey": null,
+        "updatedAt": "2026-09-25T06:30:45.527Z",
+        "createdAt": "2026-09-25T06:29:36.732Z",
+        "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1.webp?prefix=qkenn",
+        "thumbnailURL": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-400x300.webp",
+        "filename": "bai-test-cover-1.webp",
+        "mimeType": "image/webp",
+        "filesize": 18852,
+        "width": 1600,
+        "height": 900,
+        "focalX": 50,
+        "focalY": 50,
+        "sizes": {
+          "thumbnail": {
+            "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-400x300.webp?prefix=qkenn",
+            "width": 400,
+            "height": 300,
+            "mimeType": "image/webp",
+            "filesize": 4188,
+            "filename": "bai-test-cover-1-400x300.webp"
+          },
+          "card": {
+            "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-800x450.webp?prefix=qkenn",
+            "width": 800,
+            "height": 450,
+            "mimeType": "image/webp",
+            "filesize": 8372,
+            "filename": "bai-test-cover-1-800x450.webp"
+          },
+          "hero": {
+            "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-1600x900.webp?prefix=qkenn",
+            "width": 1600,
+            "height": 900,
+            "mimeType": "image/webp",
+            "filesize": 18852,
+            "filename": "bai-test-cover-1-1600x900.webp"
+          },
+          "og": {
+            "url": "https://cms.qkenn.cloud/api/media/file/bai-test-cover-1-1200x630.webp?prefix=qkenn",
+            "width": 1200,
+            "height": 630,
+            "mimeType": "image/webp",
+            "filesize": 12954,
+            "filename": "bai-test-cover-1-1200x630.webp"
+          }
+        }
+      },
+      "categories": [
+        {
+          "id": 1,
+          "title": "Engineering",
+          "slug": "ky-thuat",
+          "updatedAt": "2026-09-25T06:29:37.868Z",
+          "createdAt": "2026-09-25T06:29:37.855Z"
+        }
+      ],
+      "author": 1,
+      "publishedAt": "2026-09-25T06:29:37.884Z",
+      "site": "qkenn",
+      "meta": {
+        "title": null,
+        "description": null,
+        "image": null
+      },
+      "updatedAt": "2026-09-25T06:29:37.983Z",
+      "createdAt": "2026-09-25T06:29:37.892Z",
+      "_status": "published",
+      "contentHtml": "<div class=\"payload-richtext\"><p>This is the first <strong>test</strong> post on the production CMS at <a href=\"https://cms.qkenn.cloud\" rel=\"noopener noreferrer\" target=\"_blank\">cms.qkenn.cloud</a>.</p><h2>What&#39;s in the stack</h2><ul class=\"list-bullet\"><li\n          class=\"\"\n          style=\"\"\n          value=\"1\"\n        >Payload CMS 3.90 running in Docker on the VPS</li><li\n          class=\"\"\n          style=\"\"\n          value=\"2\"\n        >Postgres 16 for content, images on Cloudflare R2</li><li\n          class=\"\"\n          style=\"\"\n          value=\"3\"\n        >The blog is a static Astro site, rebuilt on every publish</li></ul><h3>Publishing flow</h3><p>Write → <strong>Publish</strong> → GitHub Actions rebuilds the site → the post is live in about <em>1–2 minutes</em>.</p><blockquote>Readers only download static HTML, so the blog stays up even if the CMS is down.</blockquote></div>"
+    }
+  ],
+  "hasNextPage": false,
+  "hasPrevPage": false,
+  "limit": 100,
+  "nextPage": null,
+  "page": 1,
+  "pagingCounter": 1,
+  "prevPage": null,
+  "totalDocs": 1,
+  "totalPages": 1
+}

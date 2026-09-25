@@ -1,0 +1,20 @@
+{
+  "docs": [
+    {
+      "id": 1,
+      "title": "Engineering",
+      "slug": "ky-thuat",
+      "updatedAt": "2026-09-25T06:29:37.868Z",
+      "createdAt": "2026-09-25T06:29:37.855Z"
+    }
+  ],
+  "hasNextPage": false,
+  "hasPrevPage": false,
+  "limit": 100,
+  "nextPage": null,
+  "page": 1,
+  "pagingCounter": 1,
+  "prevPage": null,
+  "totalDocs": 1,
+  "totalPages": 1
+}

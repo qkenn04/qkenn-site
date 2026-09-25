@@ -1,0 +1,17 @@
+{
+  "docs": [
+    {
+      "id": 2,
+      "title": "Test post: the CMS is live in production"
+    }
+  ],
+  "hasNextPage": false,
+  "hasPrevPage": false,
+  "limit": 100,
+  "nextPage": null,
+  "page": 1,
+  "pagingCounter": 1,
+  "prevPage": null,
+  "totalDocs": 1,
+  "totalPages": 1
+}
