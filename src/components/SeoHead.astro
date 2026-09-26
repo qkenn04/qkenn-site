@@ -35,6 +35,8 @@ interface Props {
   article?: SeoArticle
   noindex?: boolean
   rssTitle: string
+  /** <meta name="author"> (bài viết) */
+  author?: string
 }
 
 const {
@@ -49,6 +51,7 @@ const {
   article,
   noindex = false,
   rssTitle,
+  author,
 } = Astro.props
 
 const site = Astro.site ?? Astro.url
@@ -64,6 +67,7 @@ const altLocale = otherLocale(locale)
 
 <title>{title}</title>
 <meta name="description" content={description} />
+{author && <meta name="author" content={author} />}
 {canonical && <link rel="canonical" href={canonical} />}
 {noindex && <meta name="robots" content="noindex, follow" />}
 {hreflangLinks.map((l) => <link rel="alternate" hreflang={l.lang} href={l.href} />)}

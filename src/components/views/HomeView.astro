@@ -2,6 +2,7 @@
 import { getPosts, getSiteSettings, type Locale } from '../../lib/cms'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import PostList from '../PostList.astro'
+import { buildItemList } from '../../lib/structured-data'
 import { routes } from '../../i18n/routes'
 import { useTranslations } from '../../i18n/ui'
 
@@ -15,6 +16,9 @@ const [settings, posts] = await Promise.all([getSiteSettings(locale), getPosts(l
 const latest = posts.slice(0, 5)
 const tagline = settings.tagline?.trim()
 const description = settings.description?.trim()
+// Bài chưa dịch: URL canonical là bản tiếng Việt
+const canonicalPostPath = (slug: string, isFallback: boolean) =>
+  routes.post(isFallback && locale !== 'vi' ? 'vi' : locale, slug)
 ---
 
 <BaseLayout
@@ -23,6 +27,16 @@ const description = settings.description?.trim()
   description={description || tagline}
   path={routes.home(locale)}
   alternates={{ vi: routes.home('vi'), en: routes.home('en') }}
+  structuredData={({ absolute, canonicalUrl }) =>
+    latest.length && canonicalUrl
+      ? [
+          buildItemList(
+            `${canonicalUrl}#latest-posts`,
+            latest.map((p) => ({ name: p.title, url: absolute(canonicalPostPath(p.slug, p.isFallback)) })),
+          ),
+        ]
+      : []
+  }
 >
   <section class="mb-14" aria-labelledby="intro-title">
     <h1 id="intro-title" class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">

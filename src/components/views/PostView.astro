@@ -7,6 +7,7 @@ import Notice from '../Notice.astro'
 import PostMeta from '../PostMeta.astro'
 import Prose from '../Prose.astro'
 import { stripSiteSuffix } from '../seo'
+import { buildBlogPosting, buildBreadcrumbList } from '../../lib/structured-data'
 import { routes, type Alternates } from '../../i18n/routes'
 import { otherLocale, useTranslations } from '../../i18n/ui'
 import type { PostLink } from './static-paths'
@@ -34,6 +35,10 @@ const isFallback = post.isFallback && locale !== 'vi'
 const contentLang = isFallback ? 'vi' : undefined
 const hreflang: Alternates = alternate && !alternate.isFallback ? alternates : { [locale]: path }
 
+const seoTitle = stripSiteSuffix(post.meta?.title, settings.siteName) || post.title
+const canonicalPath = isFallback ? routes.post('vi', post.slug) : path
+const sections = post.categories.map((c) => c.title).filter(Boolean)
+
 const hasHero = !!pickImage(post.coverImage, 'hero')
 const linkLang = (link: PostLink) => (link.isFallback && locale !== 'vi' ? 'vi' : undefined)
 ---
@@ -41,17 +46,38 @@ const linkLang = (link: PostLink) => (link.isFallback && locale !== 'vi' ? 'vi' 
 <BaseLayout
   locale={locale}
   settings={settings}
-  title={stripSiteSuffix(post.meta?.title, settings.siteName) || post.title}
+  title={seoTitle}
   description={post.meta?.description?.trim() || post.excerpt}
   path={path}
-  canonicalPath={isFallback ? routes.post('vi', post.slug) : undefined}
+  canonicalPath={isFallback ? canonicalPath : undefined}
   alternates={alternates}
   hreflang={hreflang}
   image={post.meta?.image ?? post.coverImage}
   article={{
     publishedTime: post.publishedAt,
     modifiedTime: post.updatedAt,
-    tags: post.categories.map((c) => c.title).filter(Boolean),
+    tags: sections,
+  }}
+  structuredData={({ siteUrl, absolute, canonicalUrl, description, imageUrl }) => {
+    const url = canonicalUrl ?? absolute(canonicalPath)
+    return [
+      buildBlogPosting(siteUrl, {
+        url,
+        title: post.title || seoTitle,
+        description,
+        datePublished: post.publishedAt,
+        dateModified: post.updatedAt,
+        // Bài chưa dịch: nội dung là bản tiếng Việt
+        inLanguage: isFallback ? 'vi' : locale,
+        image: imageUrl,
+        sections,
+      }),
+      buildBreadcrumbList(`${absolute(path)}#breadcrumb`, [
+        { name: t('nav.home'), url: absolute(routes.home(locale)) },
+        { name: t('blog.title'), url: absolute(routes.blog(locale)) },
+        { name: post.title || seoTitle, url },
+      ]),
+    ]
   }}
 >
   <article>

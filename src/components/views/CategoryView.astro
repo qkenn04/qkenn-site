@@ -2,6 +2,7 @@
 import { getSiteSettings, type Category, type Locale, type Post } from '../../lib/cms'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import PostList from '../PostList.astro'
+import { buildBreadcrumbList } from '../../lib/structured-data'
 import { routes, type Alternates } from '../../i18n/routes'
 import { countPosts, otherLocale, useTranslations } from '../../i18n/ui'
 
@@ -35,6 +36,13 @@ const name = category.title || category.slug
   alternates={alternates}
   hreflang={hasAlternate ? alternates : { [locale]: path }}
   noindex={posts.length === 0}
+  structuredData={({ absolute, canonicalUrl }) => [
+    buildBreadcrumbList(`${canonicalUrl ?? absolute(path)}#breadcrumb`, [
+      { name: t('nav.home'), url: absolute(routes.home(locale)) },
+      { name: t('blog.title'), url: absolute(routes.blog(locale)) },
+      { name, url: absolute(path) },
+    ]),
+  ]}
 >
   <header class="mb-6">
     <a

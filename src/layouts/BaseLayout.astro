@@ -1,12 +1,34 @@
 ---
 import '../styles/global.css'
-import type { Locale, Media, SiteSettings } from '../lib/cms'
+import { getPage, locales, type Locale, type Media, type SiteSettings } from '../lib/cms'
+import {
+  buildGraph,
+  buildPerson,
+  buildWebSite,
+  profileUrls,
+  serializeJsonLd,
+  type JsonLdNode,
+} from '../lib/structured-data'
 import Footer from '../components/Footer.astro'
 import Header from '../components/Header.astro'
 import SeoHead, { type SeoArticle } from '../components/SeoHead.astro'
 import { pickOgImage } from '../components/media'
 import type { Alternates } from '../i18n/routes'
 import { localeMeta, useTranslations } from '../i18n/ui'
+
+/** Thông tin view cần để dựng node JSON-LD riêng của trang (BlogPosting, BreadcrumbList…) */
+export interface JsonLdContext {
+  /** https://qkenn.cloud/ */
+  siteUrl: string
+  /** path → URL tuyệt đối */
+  absolute: (path: string) => string
+  /** URL canonical tuyệt đối của trang (undefined nếu trang không có canonical) */
+  canonicalUrl?: string
+  /** meta description đã chuẩn hoá */
+  description: string
+  /** Ảnh og (og → hero) tuyệt đối, hoặc null */
+  imageUrl: string | null
+}
 
 interface Props {
   locale: Locale
@@ -25,6 +47,11 @@ interface Props {
   image?: Media | null
   article?: SeoArticle
   noindex?: boolean
+  /**
+   * JSON-LD: mặc định mọi trang có WebSite + Person; hàm trả thêm node riêng của trang.
+   * false → không in JSON-LD (trang 404).
+   */
+  structuredData?: false | ((ctx: JsonLdContext) => JsonLdNode[])
 }
 
 const {
@@ -39,12 +66,14 @@ const {
   image,
   article,
   noindex = false,
+  structuredData,
 } = Astro.props
 
 const t = useTranslations(locale)
 const siteName = settings.siteName?.trim() || 'qkenn'
 const tagline = settings.tagline?.trim()
-const fullTitle = title ? `${title} | ${siteName}` : tagline ? `${siteName} – ${tagline}` : siteName
+// Trang chủ: luôn "qkenn – <tagline>" (không để tiêu đề trơ một chữ), CMS chưa có tagline → câu mặc định
+const fullTitle = title ? `${title} | ${siteName}` : `${siteName} – ${tagline || t('site.defaultTagline')}`
 const metaDescription = (
   description?.trim() ||
   settings.description?.trim() ||
@@ -54,6 +83,34 @@ const metaDescription = (
 const canonical = canonicalPath ?? path
 // Trang canonical ở nơi khác (bản dịch dự phòng) thì không khai báo hreflang
 const hreflangMap = canonical && canonical === path ? (hreflang ?? alternates) : {}
+const ogImage = pickOgImage(image)
+
+// JSON-LD: một "@graph" / trang, node tham chiếu nhau qua @id cố định (xem src/lib/structured-data.ts)
+let jsonLd: string | null = null
+if (structuredData !== false) {
+  const siteUrl = new URL('/', Astro.site ?? Astro.url).href
+  const absolute = (p: string) => new URL(p, siteUrl).href
+  // Mô tả người lấy từ SEO của trang Giới thiệu (nếu CMS có); request được cache trong lần build
+  const about = await getPage('about', locale)
+  const identity = {
+    siteUrl,
+    name: siteName,
+    alternateNames: [new URL(siteUrl).hostname].filter((n) => n !== siteName),
+    description: settings.description,
+    personDescription: about?.meta?.description,
+    sameAs: profileUrls(settings.socials),
+    inLanguage: locales.map((l) => localeMeta[l].htmlLang),
+  }
+  const extra =
+    structuredData?.({
+      siteUrl,
+      absolute,
+      canonicalUrl: canonical ? absolute(canonical) : undefined,
+      description: metaDescription,
+      imageUrl: ogImage?.url ?? null,
+    }) ?? []
+  jsonLd = serializeJsonLd(buildGraph([buildWebSite(identity), buildPerson(identity), ...extra]))
+}
 ---
 
 <!doctype html>
@@ -84,11 +141,13 @@ const hreflangMap = canonical && canonical === path ? (hreflang ?? alternates) :
       description={metaDescription}
       canonicalPath={canonical}
       hreflang={hreflangMap}
-      image={pickOgImage(image)}
+      image={ogImage}
       article={article}
       noindex={noindex}
       rssTitle={t('rss.title', { site: siteName })}
+      author={article ? siteName : undefined}
     />
+    {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLd} />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="generator" content={Astro.generator} />
   </head>

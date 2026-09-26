@@ -4,6 +4,7 @@ import { getSiteSettings, type Locale, type Post } from '../../lib/cms'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Pagination from '../Pagination.astro'
 import PostList from '../PostList.astro'
+import { buildBreadcrumbList } from '../../lib/structured-data'
 import { routes } from '../../i18n/routes'
 import { countPosts, otherLocale, useTranslations } from '../../i18n/ui'
 import type { CategorySummary } from './static-paths'
@@ -36,6 +37,13 @@ const title = n > 1 ? t('blog.pageTitle', { page: n }) : t('blog.title')
   path={path}
   alternates={alternates}
   hreflang={hasEquivalent ? alternates : { [locale]: path }}
+  structuredData={({ absolute, canonicalUrl }) => [
+    buildBreadcrumbList(`${canonicalUrl ?? absolute(path)}#breadcrumb`, [
+      { name: t('nav.home'), url: absolute(routes.home(locale)) },
+      { name: t('blog.title'), url: absolute(routes.blog(locale)) },
+      ...(n > 1 ? [{ name: title, url: absolute(path) }] : []),
+    ]),
+  ]}
 >
   <header class="mb-6">
     <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">{t('blog.title')}</h1>

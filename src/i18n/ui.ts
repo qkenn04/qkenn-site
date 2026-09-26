@@ -15,6 +15,7 @@ const vi = {
   'theme.toggle': 'Chế độ tối',
 
   'site.defaultDescription': 'Ghi chép cá nhân về phần mềm và công nghệ.',
+  'site.defaultTagline': 'Blog kỹ thuật cá nhân',
 
   'home.latest': 'Bài viết mới nhất',
   'home.allPosts': 'Xem tất cả bài viết',
@@ -73,6 +74,7 @@ const en: Record<UiKey, string> = {
   'theme.toggle': 'Dark mode',
 
   'site.defaultDescription': 'Personal notes on software and technology.',
+  'site.defaultTagline': 'Personal engineering blog',
 
   'home.latest': 'Latest posts',
   'home.allPosts': 'View all posts',
